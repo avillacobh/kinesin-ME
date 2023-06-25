@@ -3,7 +3,7 @@
              Andres Felipe Duque Bran
              Andres Felipe Villacob Hernandez
 
-    Última Actualizacion: Agosto 2 de 2021.
+    Ultima Actualizacion: Agosto 2 de 2021.
 */
 
 // Librerias Incluidas.
@@ -25,7 +25,7 @@ const double x0 =1.96; // units: nm
 const double k = 0.72; // units: pN/nm
 const double T =293; // units: K
 const double m = 110e3*1.66054e-27; //units: Kg
-const double gamma_number = 6*M_PI*0.001*2.5e-9;
+const double gamma = 6*M_PI*0.001*2.5e-9;
 //units: N*s/m
 const double km = 24633.0; // units: uM
 const double k1 = 4.0; // units: 1/(uM*s)
@@ -34,7 +34,6 @@ const double k4 = 600.0; // units: 1/s
 const double k5 = 600.0; // units: 1/s
 const double F0 = 13.5; // units: pN
 const double c0 = 1.8; // units: pN
-const double L = 8.0; // nm
 
 // Parametro Aleatorio de la libreria Random
 const int seed = 1;
@@ -43,16 +42,14 @@ std::mt19937 gen(seed);
 // Parametros secundarios
 const double Beta = 1/(kB*T*1e21);
 //units (1/pN*nm)
-const double dt = m*1/gamma_number; // units: s
-const double sigma = std::sqrt(2*kB*T*dt/gamma_number)
+const double dt = m*1/gamma; // units: s
+const double sigma = std::sqrt(2*kB*T*dt/gamma)
                      *1e9; // units: nm
-//const double alpha = std::sqrt(6.0*kB*T*dt/gamma_number)
-                     //*1e9 ; // units: nm
+const double alpha = std::sqrt(6.0*kB*T*dt/gamma)
+                     *1e9 ; // units: nm
 
 // Numero de Iteraciones
 const int N = 1000;
-const int NATP = 100000;
-const double dATP = 10.0;
 
 // Declaracion de Funciones
 double Potential (double x, double F);
@@ -81,10 +78,10 @@ void head::InitialStep(double F){
 
 // Posicion y Energia Iniciales
 void head::OneStep(double F){
-    std::normal_distribution<double> displ(0.0,
-                                           sigma);
-    double dx = displ(gen);
-    std::uniform_real_distribution<double> unif(0.0,
+    std::uniform_real_distribution<> displ(-1.0,
+                                           1.0);
+    double dx = displ(gen)*alpha;
+    std::uniform_real_distribution<> unif(0.0,
                                           1.0);
     double P = unif(gen);
     double nE = Potential(x+dx, F);
@@ -99,7 +96,7 @@ void head::OneStep(double F){
 }
 
 int main(void){
-    // Declaracion de la Fuerza
+     // Declaracion de la Fuerza
     const double dFext = 1.5;
     const int Nbins = 30;
     double Fext = 0.0;
@@ -128,9 +125,9 @@ double Potential (double x, double F){
 // Tiempo de Difusion en todas las Iteraciones
 std::vector<double> FirstPassageTime(double F,
                                      int N){
-    /*std::cout << "Calculating first passage time "
+    std::cout << "Calculating first passage time "
               << "with an external force F="
-              << F << " pN" <<'\n';*/
+              << F << " pN" <<'\n';
     std::vector<double> w(N,0);
     std::string name1 = "first_passage_time_Fext="
                         + std::to_string(F)
@@ -139,20 +136,20 @@ std::vector<double> FirstPassageTime(double F,
     // Paralelizacion de un paso de la Kinesina
     #pragma omp parallel for
         for (int j=0;j<N;j++){
-            int t =0;
+            double t =0.0;
             head kinesin;
             kinesin.InitialStep(F);
-            while(kinesin.Getx() >= -2.0*L){
+            while(kinesin.Getx() >= -16.0){
                 kinesin.OneStep(F);
-                t +=1;
+                t +=dt;
             }
-            w[j] = t*dt;
-            /*std::cout << "Diffusion process "
-                      << j << " executed" <<'\n';*/
+            w[j] = t;
+            std::cout << "Diffusion process "
+                      << j << " executed" <<'\n';
         }
-    /*std::cout << "Diffusion simulation "
+    std::cout << "Diffusion simulation "
               << "finished for F="
-              << F << " pN" << '\n';*/
+              << F << " pN" << '\n';
     for(int n = 0; n < N; n++){
         mout << w[n] << "\n";
     }
@@ -162,7 +159,8 @@ std::vector<double> FirstPassageTime(double F,
 // Creacion de datos para el Histograma
 std::vector<double> Histogram (int Nbins,
                  std::vector<double> waux){
-    //std::cout <<"Calculating distribution obtained" << '\n';
+    std::cout <<"Calculating distribution obtained"
+              << '\n';
     int N = waux.size();
     std::vector<double> h(Nbins+2,0.0);
     std::sort(waux.begin(), waux.end());
@@ -186,15 +184,17 @@ std::vector<double> Histogram (int Nbins,
 }
 
 // Intergacion del Tiempo de Paso Completo
-double T_integrate (std::vector<double> w,
+double T_integrate (std::vector<double> h,
                     double ATP, double Fext){
+    int Nbins = h.size() - 2; 
     double t1 = 1/(k1*ATP);
     double sum;
-    for (int i=0; i<N; i++) {
-        sum += w[i];
+    for (int i=0; i<Nbins; i++) {
+        sum += (h[Nbins] + i * h[Nbins + 1])
+                * h[i];
     }
     double t2 = 1/k2;
-    double t3 = sum/N;
+    double t3 = sum;
     double t4 = (1/k4)
                 * std::exp(std::abs(Fext - F0)/c0);
     double t5 = 1/k5;
@@ -208,18 +208,18 @@ void Data_Velocity(double Fext, int Nbins){
                        + "_backward.txt";
     std::ofstream fout(name);
     std::vector<double> w(N,0);
-    //std::vector<double> h(Nbins + 2,0);
+    std::vector<double> h(Nbins + 2,0);
     w = FirstPassageTime(Fext,N);
-    //h = Histogram(Nbins, w);
+    h = Histogram(Nbins, w);
     double ATP = 0.0;
     double T = 0.0;
-    /*std::cout << "Calculating ATP dependency "
+    std::cout << "Calculating ATP dependency "
             << "with an external force F="
-            << Fext <<" pN" <<'\n';*/
-    for(int i = 0; i <NATP;i++){
-        T = T_integrate (w, ATP, Fext);
-        fout<< ATP << '\t' << L/T << '\n';
-        ATP+=dATP;
+            << Fext <<" pN" <<'\n';
+    for(int i = 0; i <10000;i++){
+        T = T_integrate (h, ATP, Fext);
+        fout<< ATP << '\t' << 8/T << '\n';
+        ATP+=0.1;
     }
 }
 
