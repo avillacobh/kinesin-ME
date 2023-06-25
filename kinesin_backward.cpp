@@ -125,9 +125,9 @@ double Potential (double x, double F){
 // Tiempo de Difusion en todas las Iteraciones
 std::vector<double> FirstPassageTime(double F,
                                      int N){
-    std::cout << "Calculating first passage time "
+    /*std::cout << "Calculating first passage time "
               << "with an external force F="
-              << F << " pN" <<'\n';
+              << F << " pN" <<'\n';*/
     std::vector<double> w(N,0);
     std::string name1 = "first_passage_time_Fext="
                         + std::to_string(F)
@@ -144,12 +144,12 @@ std::vector<double> FirstPassageTime(double F,
                 t +=dt;
             }
             w[j] = t;
-            std::cout << "Diffusion process "
-                      << j << " executed" <<'\n';
+            /*std::cout << "Diffusion process "
+                      << j << " executed" <<'\n';*/
         }
-    std::cout << "Diffusion simulation "
+    /*std::cout << "Diffusion simulation "
               << "finished for F="
-              << F << " pN" << '\n';
+              << F << " pN" << '\n';*/
     for(int n = 0; n < N; n++){
         mout << w[n] << "\n";
     }
@@ -159,8 +159,8 @@ std::vector<double> FirstPassageTime(double F,
 // Creacion de datos para el Histograma
 std::vector<double> Histogram (int Nbins,
                  std::vector<double> waux){
-    std::cout <<"Calculating distribution obtained"
-              << '\n';
+    /*std::cout <<"Calculating distribution obtained"
+              << '\n';*/
     int N = waux.size();
     std::vector<double> h(Nbins+2,0.0);
     std::sort(waux.begin(), waux.end());
@@ -213,9 +213,9 @@ void Data_Velocity(double Fext, int Nbins){
     h = Histogram(Nbins, w);
     double ATP = 0.0;
     double T = 0.0;
-    std::cout << "Calculating ATP dependency "
+    /*std::cout << "Calculating ATP dependency "
             << "with an external force F="
-            << Fext <<" pN" <<'\n';
+            << Fext <<" pN" <<'\n';*/
     for(int i = 0; i <10000;i++){
         T = T_integrate (h, ATP, Fext);
         fout<< ATP << '\t' << 8/T << '\n';
