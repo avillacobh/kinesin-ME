@@ -25,7 +25,7 @@ const double x0 =1.96; // units: nm
 const double k = 0.72; // units: pN/nm
 const double T =293; // units: K
 const double m = 110e3*1.66054e-27; //units: Kg
-const double gamma = 6*M_PI*0.001*2.5e-9;
+const double gamma_number = 6*M_PI*0.001*2.5e-9;
 //units: N*s/m
 const double km = 24633.0; // units: uM
 const double k1 = 4.0; // units: 1/(uM*s)
@@ -42,10 +42,10 @@ std::mt19937 gen(seed);
 // Parametros secundarios
 const double Beta = 1/(kB*T*1e21);
 //units (1/pN*nm)
-const double dt = m*1/gamma; // units: s
-const double sigma = std::sqrt(2*kB*T*dt/gamma)
+const double dt = m*1/gamma_number; // units: s
+const double sigma = std::sqrt(2*kB*T*dt/gamma_number)
                      *1e9; // units: nm
-const double alpha = std::sqrt(6.0*kB*T*dt/gamma)
+const double alpha = std::sqrt(6.0*kB*T*dt/gamma_number)
                      *1e9 ; // units: nm
 
 // Numero de Iteraciones
